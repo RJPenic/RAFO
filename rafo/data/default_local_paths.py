@@ -1,0 +1,8 @@
+DEFAULT_RAW_DIR = "raw"
+DEFAULT_PARSED_DIR = "parsed"
+DEFAULT_PDBS_DIR = "pdbs"
+DEFAULT_SS_DIR = "sec_struct"
+DEFAULT_RNA3DHUB_NRLIST_CSV = "rna3dhub_nrlist.csv"
+DEFAULT_MAX_TRAIN_SIM_CSV = "max_train_sim.csv"
+DEFAULT_SEQS_FASTA = "seqs.fasta"
+DEFAULT_TRAIN_CLUSTER_JSON = "train_clusters.json"

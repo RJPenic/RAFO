@@ -1,0 +1,71 @@
+Bootstrap: docker
+From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
+Stage: build
+
+%files
+    environment.yml /opt/rafo/environment.yml
+    rafo /opt/rafo/rafo
+    scripts /opt/rafo/scripts
+    run.py /opt/rafo/run.py
+
+%environment
+    export PATH="/opt/miniforge/bin:${PATH}:/usr/local/bin"
+    export DATAPATH="/opt/miniforge/pkgs/rnastructure-6.4-h503566f_2/share/rnastructure/data_tables"
+    export RINALMO_PRETRAINED="/opt/rafo/weights/rinalmo_giga_pretrained.pt"
+    export QRNAS_FF_DIR="/opt/rafo/QRNAS_forcefield"
+
+%post
+    export RINALMO_PRETRAINED="/opt/rafo/weights/rinalmo_giga_pretrained.pt"
+    export QRNAS_FF_DIR="/opt/rafo/QRNAS_forcefield"
+
+    export CUDA_HOME=/usr/local/cuda
+
+    # Set up basic packages
+    apt update && apt install build-essential -y
+    apt install curl -y
+    apt -y install git
+    apt -y install wget
+    apt -y install unzip
+
+    # Install Miniforge
+    curl -qsLLo /tmp/miniforge.sh "https://github.com/conda-forge/miniforge/releases/download/24.11.3-0/Miniforge3-24.11.3-0-Linux-x86_64.sh"
+    bash /tmp/miniforge.sh -b -p /opt/miniforge
+    export PATH="/opt/miniforge/bin:${PATH}"
+
+    # Install packages with Conda/Mamba
+    mamba env update -n base --file /opt/rafo/environment.yml && mamba clean --all
+
+    # Install QRNAS
+    wget http://genesilico.pl/QRNAS/QRNAS.tar.gz -P /tmp
+    tar -xzf /tmp/QRNAS.tar.gz -C /tmp
+    cp /tmp/QRNAS/QRNA /usr/local/bin
+    cp -r /tmp/QRNAS/forcefield ${QRNAS_FF_DIR}
+    yes | rm -r /tmp/QRNAS
+
+    # Install ipknot
+    wget https://github.com/satoken/ipknot/releases/download/v1.1.0/ipknot-1.1.0-x86_64-linux.zip --no-check-certificate -P /tmp
+    unzip /tmp/ipknot-1.1.0-x86_64-linux.zip -d /tmp
+    cp /tmp/ipknot-1.1.0-x86_64-linux/ipknot /usr/local/bin
+    yes | rm -r /tmp/ipknot-1.1.0-x86_64-linux
+
+    # Install OpenFold
+    git clone --branch pl_upgrades https://github.com/aqlaboratory/openfold /tmp/openfold
+    git -C /tmp/openfold checkout 23cf2f6107bf5753cfb12ce05895d66f2135d9cd
+    pip install /tmp/openfold
+    yes | rm -r /tmp/openfold
+
+    # Install RiNALMo
+    git clone https://github.com/lbcb-sci/RiNALMo /tmp/rinalmo
+    git -C /tmp/rinalmo checkout b2a2afb4217675b0699b507c4197b65ac7eab620
+    pip install /tmp/rinalmo
+    yes | rm -r /tmp/rinalmo
+
+    # Flash Attention
+    pip install flash-attn==2.6.3
+
+    # Download pretrained RiNALMo weights
+    mkdir -p "$(dirname "${RINALMO_PRETRAINED}")"
+    wget https://zenodo.org/records/10725749/files/rinalmo_giga_pretrained.pt -O ${RINALMO_PRETRAINED}
+
+%labels
+    Version v0.0.1
