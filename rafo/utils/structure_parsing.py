@@ -41,7 +41,7 @@ class ParsedMmCIF(ParsedStructureFile):
         self.xyz_generator = None
 
     def _get_entry_id(self):
-        return self.mmcif_dict["_entry.id"].lower()
+        return self.mmcif_dict["_entry.id"][0].lower()
 
     def _get_resolution(self) -> float:
         resolution = None
